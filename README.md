@@ -1,2 +1,4 @@
-# Manual_Assembly_purging
-Procedure to manually purge genome assemblies 
+# Manual genome assembly purging
+
+Procedure to manually purge genome assemblies using kmer content. Assemblers have sometimes problems to produce balanced haplotypes. When this is the case often one (or several) haplotypic assembly(ies) harbors too many contigs and the other(s) too few. It is possible using a kat kmer spectra-cn plot to visualize this state with multiple kmers in the assembly when only one copy is expected. Usually this is resolved by automatically purging the assembly within the assembler (such as in hifiasm) or with another software packag such as purge_dups. This procedure often gets rid of duplicated contigs but not always and at the moment purge_dups is not able to automatically purge contigs in triploid, tetraploid, plus assemblies. 
+This manual procedure is ment to enable assembly purging before scaffolding using the read dans haplotypic assemblies kmer content. 
