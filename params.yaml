@@ -1,0 +1,25 @@
+reads: "list.fofn"                # reads file of file 
+prefix: "out"
+kmc_reads_file_format : fm
+slice_size : 1000                      # number of base pairs for the graphic slices 
+assemblies:
+  - "ass1.fa"
+  - "ass2.fa"
+  - "ass3.fa"
+  - "ass4.fa"
+intervals:
+  - "1,2"
+  - "2,3"                         
+  - "3,4"     
+  - "4,5"     
+softwares:
+  - kmc
+  - ls
+  - kmc_dump
+  - kmc_tools
+  - seqc -h 
+  - jellyfish --version
+  - /usr/bin/query_per_sequence -h
+kmc_memory : 12                     # in Gbytes
+kmc_cpus : 4
+

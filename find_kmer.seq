@@ -1,0 +1,30 @@
+from sys import argv
+from bio import *
+from time import timing
+
+def kmer_find(record,d,lkmer) :
+	t = []
+	cpt = 0
+	# print(str(lkmer))
+	for kmer in record.seq.split(lkmer,1) :
+		cpt = cpt + 1
+		if str(kmer) in d :
+			t.append(str(record.name)+"\t"+str(cpt)+"\t"+str(kmer))
+	yield t
+
+def kmer_print(tab) :
+	for t in tab :
+		print(t) 
+
+# load kmers dictionnary
+d = {}
+lkmer = 0
+for line in open(argv[2]) :
+	d[line[:-1]]=1
+	# print(line[:-1],"*")
+	lkmer = len(line)-1
+
+# process lines
+with timing("kmer read locate") :
+	FASTA(argv[1]) |> iter ||> kmer_find(...,d,lkmer) |> kmer_print
+
