@@ -21,7 +21,18 @@ def load_data(records_file, kmer_file, selection_file):
     selection_names = ['contig_name1','contig_name2']
     selection = pd.read_csv(selection_file, sep="\t", names=selection_names, header=None)
     #print(selection)
-    #selection = False
+
+    #File verification for each contig pair the contig should be in records and the pair and the contigs in kmers    
+    for index, row in selection.iterrows():
+        if row['contig_name1'] not in records['contig'].unique() :
+            print("missing contig "+row['contig_name1']+" in records")
+            exit()
+        if row['contig_name2'] not in records['contig'].unique() :
+        	print("missing contig "+row['contig_name2']+" in records")
+        	exit()
+        if row['contig_name1']+"-"+row['contig_name2'] not in kmer['pair'].unique() :
+        	print("missing pair "+row['contig_name1']+"-"+row['contig_name2']+" in kmer")
+        	exit()    
     return records, kmer, selection
 
 # Function to fetch joined contig names from the selection DataFrame
@@ -47,6 +58,12 @@ def on_contig_select(event):
         # Split the selected contig into contig_name1 and contig_name2
         contig_name1, contig_name2 = selected_contig.split('-')
 
+        # change remove button text 
+        contig1_button.config(text="Remove "+contig_name1)
+        contig1_button.config(state="normal")
+        contig2_button.config(text="Remove "+contig_name2)
+        contig2_button.config(state="normal")
+        
         # Filter records and kmer DataFrames for both contigs
         data1_records = get_records_by_name(records_df, contig_name1)
         data2_records = get_records_by_name(records_df, contig_name2)
@@ -93,8 +110,8 @@ def on_contig_select(event):
         bottom1 = np.zeros(len(unique_locations1))
         #print("bottom1 ",bottom1)
         for cat, cat_counts in stacked_counts1.items():
-            print("cat = ",unique_locations1, cat, cat_counts)
-            axs[0, 0].bar(unique_locations1, cat_counts, width=1000, bottom=bottom1, label=str(cat))
+            #print("cat = ",unique_locations1, cat, cat_counts)
+            axs[0, 0].bar(unique_locations1, cat_counts, width=1, bottom=bottom1, label=str(cat))
             #print("bottom1 ",bottom1)
             bottom1 += np.array(cat_counts)
 
@@ -105,8 +122,8 @@ def on_contig_select(event):
         # Create a stacked bar plot for contig_name2 from records
         bottom2 = np.zeros(len(unique_locations2))
         for cat, cat_counts in stacked_counts2.items():
-            print("cat = ",unique_locations2, cat, cat_counts)
-            axs[0, 1].bar(unique_locations2, cat_counts, width=1000, bottom=bottom2, label=str(cat))
+            #print("cat = ",unique_locations2, cat, cat_counts)
+            axs[0, 1].bar(unique_locations2, cat_counts, width=1, bottom=bottom2, label=str(cat))
             bottom2 += np.array(cat_counts)
 
         axs[0, 1].set_title(f'Total : {contig_name2}', fontsize=12)
@@ -117,7 +134,7 @@ def on_contig_select(event):
         l = 0
         l1 = []
             
-        print("data1_kmer", data1_kmer)    
+        #print("data1_kmer", data1_kmer)    
         for d in data1_kmer[['contig','values']].iterrows() :
             l = len(d[1][1].split(","))
             l1 = d[1][1].split(",")
@@ -125,11 +142,11 @@ def on_contig_select(event):
         #l = len(data1_kmer[['contig','values']].head(1)['values'][:1].split(","))
         locations1 = [ i for i in range(l)]
         counts1 = [int(float(i)) for i in l1]
-        print("locations and counts 1 : ", locations1, counts1)
+        #print("locations and counts 1 : ", locations1, counts1)
         #for i in locations1 :
         #    print(i, locations1[i], counts1[i])
             
-        axs[1, 0].bar(locations1, counts1, width=1000)
+        axs[1, 0].bar(locations1, counts1, width=1)
         axs[1, 0].set_title(f'Kmer: {contig_name1}', fontsize=12)
         axs[1, 0].set_xlabel('Location', fontsize=10)
         axs[1, 0].set_ylabel('Count', fontsize=10)
@@ -147,7 +164,7 @@ def on_contig_select(event):
         #for i in locations2 :
         #    print(i, locations2[i], counts2[i])
             
-        axs[1, 1].bar(locations2, counts2, width=1000)
+        axs[1, 1].bar(locations2, counts2, width=1)
         axs[1, 1].set_title(f'Kmer: {contig_name2}', fontsize=12)
         axs[1, 1].set_xlabel('Location', fontsize=10)
         axs[1, 1].set_ylabel('Count', fontsize=10)
@@ -160,7 +177,7 @@ def on_contig_select(event):
             ax.set_xlim(0, max_x)
 
         # Redraw the canvas with the updated plots
-        axs[1, 1].legend()
+        #axs[1, 1].legend()
         canvas.draw()
 
     except IndexError:
@@ -170,8 +187,28 @@ def on_contig_select(event):
 # Function to add or remove a red vertical line at the clicked position
 def on_click(event):
     global vertical_line  # Use a global variable to track the vertical line
+    global coordinates 
     x_coord = event.xdata
+    y_coord = event.ydata
+    x = event.x
+    y = event.y
+    inaxes = event.inaxes
+    title = inaxes.get_title()
+    x_lim = inaxes.get_xlim()
+    y_lim = inaxes.get_ylim()
 
+    # locate event in canvas 
+    canvas_x, canvas_y = event.x, event.y
+    canvas_width, canvas_height = canvas.get_tk_widget().winfo_width(), canvas.get_tk_widget().winfo_height()
+    # Divide the canvas into quadrants
+    col = 0 if canvas_x < canvas_width / 2 else 1
+    row = 0 if canvas_y < canvas_height / 2 else 1
+
+    # Since y=0 is at the top in canvas coordinates, we reverse the row for more intuitive results
+    row = 1 - row
+
+    #print(f"Clicked in quadrant: [{row}, {col}]")
+    
     if x_coord is not None:
         if vertical_line is not None:
             # If a vertical line already exists, remove it
@@ -181,27 +218,72 @@ def on_click(event):
             right_button.config(state=tk.DISABLED)
         else:
             # Draw a new vertical line at the clicked position
-            vertical_line = axs[0, 0].axvline(x=x_coord, color='red', linestyle='--')
+            vertical_line = axs[row, col].axvline(x=x_coord, color='red', linestyle='--')
             left_button.config(state=tk.NORMAL)
             right_button.config(state=tk.NORMAL)
 
         # Redraw the canvas to display the changes
         canvas.draw()
 
+        #column = 0 if x < canvas.winfo_width() // 2 else 1
+        #row = 0 if y < canvas.winfo_height() // 2 else 1
+        #print(f"Clicked in row {row + 1}, column {column + 1}")
+
+
         # Print the selected contig and x-coordinate of the clicked position
         if listbox.curselection():
+            #print("listbox.curselection() ", listbox.curselection())
             selected_index = listbox.curselection()[0]
             selected_contig = listbox.get(selected_index)
-            print(f"Contig: {selected_contig}, Clicked at x-coordinate: {x_coord:.2f}")
+            #print(f"Contig: {selected_contig}, {title}, {inaxes}, {x}, {y} ,Clicked at x-coordinate: {x_coord:.2f}, y-coordinate: {y_coord:.2f} ")
+            if vertical_line is not None:
+                coordinates = f"{title} : {x_coord*1000:.2f}"
 
+def next_selection():
+    selection_indices = listbox.curselection()
+    # default next selection is the beginning
+    next_selection = 0
+
+    # make sure at least one item is selected
+    if len(selection_indices) > 0:
+        # Get the last selection, remember they are strings for some reason
+        # so convert to int
+        last_selection = int(selection_indices[-1])
+
+        # clear current selections
+        listbox.selection_clear(selection_indices)
+
+        # Make sure we're not at the last item
+        if last_selection < listbox.size() - 1:
+            next_selection = last_selection + 1
+         
+    listbox.selection_set(next_selection)
+    listbox.activate(next_selection)
+    vertical_line = None
+    left_button["state"]=tk.DISABLED
+    right_button["state"]=tk.DISABLED
+    listbox.event_generate("<<ListboxSelect>>")
+        
 # Function to handle the left button click
 def on_left_click():
-    print("left")
-
+    print(left_button["text"]+" "+coordinates)
+    next_selection()
+    
 # Function to handle the right button click
 def on_right_click():
-    print("right")
+    print(right_button["text"]+" "+coordinates)
+    next_selection()
 
+# Function to handle the left button click
+def on_button1_click():
+    print(contig2_button["text"])
+    next_selection()
+        
+# Function to handle the left button click
+def on_button2_click():
+    print(contig1_button["text"])
+    next_selection()
+        
 # Main Application
 if __name__ == "__main__":
     # Argument parsing
@@ -245,12 +327,20 @@ if __name__ == "__main__":
     canvas.get_tk_widget().pack()
 
     # Create buttons for left and right clicks
-    left_button = tk.Button(root, text="Left Click", command=on_left_click, state=tk.DISABLED)
+    left_button = tk.Button(root, text="Clip left", command=on_left_click, state=tk.DISABLED)
     left_button.pack(side=tk.LEFT, padx=(20, 10))
 
-    right_button = tk.Button(root, text="Right Click", command=on_right_click, state=tk.DISABLED)
+    right_button = tk.Button(root, text="Clip right", command=on_right_click, state=tk.DISABLED)
     right_button.pack(side=tk.LEFT)
 
+    #contig1_button = tk.Button(root, text="Remove "+contig_names[0], command=lambda contig=contig: on_button1_click(contig_names[0]))
+    contig1_button = tk.Button(root, text="Remove ", command=on_button1_click, state=tk.DISABLED)
+    contig1_button.pack(side=tk.LEFT)
+
+    #contig2_button = tk.Button(root, text="Remove "+contig_names[1], command=lambda contig=contig: on_button2_click(contig_names[1]))
+    contig2_button = tk.Button(root, text="Remove ", command=on_button2_click, state=tk.DISABLED)
+    contig2_button.pack(side=tk.LEFT)
+        
     # Bind selection and click events
     listbox.bind("<<ListboxSelect>>", on_contig_select)
     canvas.mpl_connect("button_press_event", on_click)
