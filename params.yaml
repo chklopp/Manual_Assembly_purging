@@ -2,6 +2,7 @@ reads: "list.fofn"                # reads file of file
 prefix: "out"
 kmc_reads_file_format : fm        # fm for multi fasta or fq for fastq
 slice_size : 1000                      # number of base pairs for the graphic slices 
+minimum_link_count : 500
 starting_step : 1
 kmer_length : 21
 assemblies:

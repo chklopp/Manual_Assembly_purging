@@ -476,6 +476,18 @@ def generate_count_files_for_graphs(config, count_lines):
         fi2 = open(f"{prefix}.{assembly}.localisation.clean.sort.links","r")
         fo = open(f"{prefix}.{assembly}.localisation.clean.sort.links.list.general_stats","w")
         fo2 = open(f"{prefix}.{assembly}.localisation.clean.sort.links.list.pair_stats","w")
+        fo3 = open(f"{prefix}.{assembly}.localisation.clean.sort.links.list.pair.filter","w")
+
+        # filter links per count and output pair over the limit 
+        for ind, line in enumerate(fi) :
+             b = line[:-1].split()
+             if int(b[0]) > int(minimum_link_count) :
+                 c = b[1].split(",")
+                 fo3.write(c[0]+"\t"+c[1]+"\n")
+        fi.close()
+
+        fi = open(f"{prefix}.{assembly}.localisation.clean.sort.links.list","r")
+                     
         for ind, line in enumerate(fi) :
              line = '\t'.join([x for x in line[:-1].split(' ') if len(x)>0])
              contigs.append(line.split("\t")[1].split(",")[0])
@@ -563,6 +575,7 @@ def generate_count_files_for_graphs(config, count_lines):
         fi.close()
         fo.close()
         fo2.close()
+ 
         
 # Main function to handle command-line arguments and run the checks
 def main():
