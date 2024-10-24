@@ -214,7 +214,7 @@ def generate_kmc_bases_per_interval(config):
     
     for i, interval in enumerate(intervals):
         start, end = map(str,interval.split(','))
-        kmc_line  =  f"kmc -v -k{kmer_length} -m{kmc_memory} -ci{start} -cx{end} -cs 10000 -t{kmc_cpus} -{reads_format} @{reads_f_path} {prefix}.{start}-{end}.k{kmer_length} tmp"
+        kmc_line  =  f"kmc -v -k{kmer_length} -m{kmc_memory} -ci{start} -cx{end} -cs10000 -t{kmc_cpus} -{reads_format} @{reads_f_path} {prefix}.{start}-{end}.k{kmer_length} tmp"
         print(kmc_line)
         try:
             result = subprocess.run([kmc_line], stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
@@ -268,7 +268,8 @@ def dump_kmc_bases_per_interval(config):
     
     # find kmers in assemblies 
     # create kmer jellyfish database 
-    jellyfish_line  =  "jellyfish count -m {kmer_length} -C -o All.jf -s 100M -t 10 all.k{kmer_length}.dump.fa"
+    jellyfish_line  =  f"jellyfish count -m {kmer_length} -C -o All.jf -s 100M -t 10 all.k{kmer_length}.dump.fa"
+    print(jellyfish_line)
     try:
         result = subprocess.run([jellyfish_line], stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
         if result.returncode == 0 :
@@ -284,6 +285,7 @@ def dump_kmc_bases_per_interval(config):
     assemblies = config.get('assemblies', [])
     for i, assembly in enumerate(assemblies):
         jellyfish_line  =  f"query_per_sequence All.jf {assembly} > {assembly}.locate"
+        print(jellyfish_line)
         locate.append(f"{assembly}.locate")
         try:
             result = subprocess.run([jellyfish_line], stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
@@ -388,8 +390,8 @@ def locate_common_kmers_in_contig_pairs(config, last_dump_file):
                 if len(line.split('\t')) > 3 :
                     # split line with function and return an array of correct lines 
                     lino = split_wrong_line(line[:-1], kmer_length)
-                    for li in line :
-                        fo.write(lino+"\n")
+                    for li in lino :
+                        fo.write(li+"\n")
 
         fi.close()   
         fo.close()     
@@ -427,7 +429,10 @@ def locate_common_kmers_in_contig_pairs(config, last_dump_file):
                         for r in res:
                             r1 = r.split(",")
                             #print(block[r1[0]][:-1]+"\t"+block[r1[1]][:-1])
-                            fo.write(block[r1[0]][:-1]+"\t"+block[r1[1]][:-1]+"\n")
+                            if block[r1[0]][2] > block[r1[1]][2] :
+                                fo.write(block[r1[1]][:-1]+"\t"+block[r1[0]][:-1]+"\n")
+                            else :
+                                fo.write(block[r1[0]][:-1]+"\t"+block[r1[1]][:-1]+"\n")
                     block = {}
                     block[contig]= line
                     refkmer = kmer
