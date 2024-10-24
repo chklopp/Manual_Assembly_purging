@@ -503,9 +503,9 @@ def generate_count_files_for_graphs(config, count_lines):
                 if (line.split("\t")[0] == pair[0] and line.split("\t")[3] == pair[1]) or (line.split("\t")[3] == pair[0] and line.split("\t")[0] == pair[1]) :
                    # put the pair name in the same order for both pairs 
                    if line.split("\t")[0] > line.split("\t")[0] :
-                       name = line.split("\t")[0]+"-"+line.split("\t")[3]
+                       name = line.split("\t")[0]+","+line.split("\t")[3]
                    else :
-                       name = line.split("\t")[3]+"-"+line.split("\t")[0]
+                       name = line.split("\t")[3]+","+line.split("\t")[0]
                    if name+"\t"+line.split("\t")[0]+"\t"+str(int(int(line.split("\t")[1])/slice_size)) in counts :
                        counts[name+"\t"+line.split("\t")[0]+"\t"+str(int(int(line.split("\t")[1])/slice_size))] += 1
                    else :
