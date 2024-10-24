@@ -37,7 +37,7 @@ def load_data(records_file, kmer_file, selection_file):
 
 # Function to fetch joined contig names from the selection DataFrame
 def get_joined_contig_names(selection_df):
-    contig_names = selection_df.apply(lambda row: f"{row['contig_name1']}-{row['contig_name2']}", axis=1)
+    contig_names = selection_df.apply(lambda row: f"{row['contig_name1']},{row['contig_name2']}", axis=1)
     return contig_names
 
 # Function to filter records DataFrame by contig name
