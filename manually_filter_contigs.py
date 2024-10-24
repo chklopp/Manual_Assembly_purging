@@ -31,7 +31,7 @@ def load_data(records_file, kmer_file, selection_file):
         	print("missing contig "+row['contig_name2']+" in records")
         	exit()
         if row['contig_name1']+"-"+row['contig_name2'] not in kmer['pair'].unique() :
-        	print("missing pair "+row['contig_name1']+"-"+row['contig_name2']+" in kmer")
+        	print("missing pair "+row['contig_name1']+","+row['contig_name2']+" in kmer")
         	exit()    
     return records, kmer, selection
 
