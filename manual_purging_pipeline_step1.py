@@ -214,7 +214,7 @@ def generate_kmc_bases_per_interval(config):
     
     for i, interval in enumerate(intervals):
         start, end = map(str,interval.split(','))
-        kmc_line  =  f"kmc -v -k{kmer_length} -m{kmc_memory} -ci{start} -cx{end} -t{kmc_cpus} -{reads_format} @{reads_f_path} {prefix}.{start}-{end}.k{kmer_length} tmp"
+        kmc_line  =  f"kmc -v -k{kmer_length} -m{kmc_memory} -ci{start} -cx{end} -cs 10000 -t{kmc_cpus} -{reads_format} @{reads_f_path} {prefix}.{start}-{end}.k{kmer_length} tmp"
         print(kmc_line)
         try:
             result = subprocess.run([kmc_line], stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
