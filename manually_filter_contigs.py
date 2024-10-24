@@ -30,7 +30,7 @@ def load_data(records_file, kmer_file, selection_file):
         if row['contig_name2'] not in records['contig'].unique() :
         	print("missing contig "+row['contig_name2']+" in records")
         	exit()
-        if row['contig_name1']+"-"+row['contig_name2'] not in kmer['pair'].unique() :
+        if row['contig_name1']+","+row['contig_name2'] not in kmer['pair'].unique() :
         	print("missing pair "+row['contig_name1']+","+row['contig_name2']+" in kmer")
         	exit()    
     return records, kmer, selection
@@ -56,7 +56,7 @@ def on_contig_select(event):
         selected_contig = listbox.get(selected_index)
 
         # Split the selected contig into contig_name1 and contig_name2
-        contig_name1, contig_name2 = selected_contig.split('-')
+        contig_name1, contig_name2 = selected_contig.split(',')
 
         # change remove button text 
         contig1_button.config(text="Remove "+contig_name1)

@@ -546,10 +546,17 @@ def generate_count_files_for_graphs(config, count_lines):
             #print(numpy_table)
             for k, j in enumerate(i[2]) :
                 numpy_table[j] = i[3][k]
-            #print(numpy_table)
-            line = assembly+"\t"+i[0]+"\t"+i[1]+"\t"
+            
+            #print(i[0], i[1])
+            contig=i[0].split(",")
+            if contig[0] > contig[1] :
+                line = assembly+"\t"+"\t"+contig[1]+","+contig[0]+"\t"+i[1]+"\t"
+            else :
+                line = assembly+"\t"+"\t"+contig[0]+","+contig[1]+"\t"+i[1]+"\t"
+
             for i in range(contig_chunks[i[1]]):
                 line = line+str(numpy_table[i])+","
+
             line = line[:-1]
             fo2.write(line+"\n")
         
