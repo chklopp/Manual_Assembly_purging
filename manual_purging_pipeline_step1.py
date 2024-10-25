@@ -94,21 +94,22 @@ def count_per_slice(loc, sequences, config, slices):
     # for each contig
     for (name, seq) in sequences:
         # create the empty numpy table which will recieve the count
-        numpy_table = np.zeros((int(len(seq)/slice_size)+1, len(config.get('assemblies'))))
+        numpy_table = np.zeros((int(len(seq)/slice_size)+1, len(config.get('assemblies'))+1))
 
         # for each chunck and each kmer occurrences count de presence of this kmer count
         for i in range(0, int(len(seq)/slice_size)+1):
             chunk = seq[i*slice_size:i*slice_size+slice_size-1]
-            for a in range(len(config.get('assemblies'))) :
+            for a in range(len(config.get('assemblies'))+1) :
                  numpy_table[i,a] = chunk.count(str(a))
         # print lines
-        for a in range(len(config.get('assemblies'))) :
-            line = f"{loc}\t{name}\t"+str(a+1)+"\t"
+        for a in range(len(config.get('assemblies'))+1) :
+            line = f"{loc}\t{name}\t"+str(a)+"\t"
             for i in range(0, int(len(seq)/slice_size)+1):
                 line = line+str(numpy_table[i,a])+","
             line = line[:-1]
-            #print(line)
+            print(line)
             slices.append(line)
+        #print(slice)
 
     #print(lines)  
     return slices
@@ -226,6 +227,26 @@ def generate_kmc_bases_per_interval(config):
             print(f"{prefix}.{start}-{end}.k{kmer_length} database could not be created")
             return False
 
+def generate_kmc_bases_per_assembly(config):
+    assemblies = config.get('assemblies', [])
+    kmc_memory = config.get('kmc_memory')
+    kmc_cpus = config.get('kmc_cpus')
+    prefix = config.get('prefix')
+    kmer_length = config.get('kmer_length')
+    
+    for i, assem in enumerate(assemblies):
+        kmc_line  =  f"kmc -v -k{kmer_length} -m{kmc_memory} -ci1 -cx1000 -cs10000 -t{kmc_cpus} -fm {assem} {prefix}.{assem}.k{kmer_length} tmp"
+        print(kmc_line)
+        try:
+            result = subprocess.run([kmc_line], stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+            if result.returncode == 0 :
+                print(f"{prefix}.{assem}.k{kmer_length} database created")
+            else:
+                print(f"{prefix}.{assem}.k{kmer_length} database not created")
+        except FileNotFoundError:
+            print(f"{prefix}.{assem}.k{kmer_length} database could not be created")
+            return False
+            
 def dump_kmc_bases_per_interval(config):
     intervals = config.get('intervals', [])
     reads_f_path = config.get('reads')
@@ -499,6 +520,7 @@ def generate_count_files_for_graphs(config, count_lines):
         #print("contigs for which to get general stats", set(contigs))
         #print("contig pair for wich to get local stats", contig_pairs)
         
+        # This part should read in locate an print in records to present the number of count of each coverage 
         for i, line in enumerate(count_lines) :
             #print(line)
             if line.split("\t")[0] == assembly :
@@ -616,6 +638,7 @@ def main():
     # produce kmc interval databases
     if int(config.get('starting_step')) <= 2 :
         generate_kmc_bases_per_interval(config)
+        generate_kmc_bases_per_assembly(config)
     
     # produce kmc interval databases
     if int(config.get('starting_step')) <= 3 :

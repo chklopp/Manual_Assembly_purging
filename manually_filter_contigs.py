@@ -90,21 +90,25 @@ def on_contig_select(event):
             df_values = pd.DataFrame.from_dict(values)
             locations = [ i for i in range(l)]
             categories = sorted(data['haplotype'].unique())           
-            stacked_data = {cat: [] for cat in categories}
+            #stacked_data = {cat: [] for cat in categories}
+            stacked_data = {cat: [] for cat in [max(categories)]}
 
             for loc in locations:
                 count = 0
                 for cat in categories:
-                    count = int(float(df_values[cat][0].split(",")[loc]))
-                    stacked_data[cat].append(count)
-
+                    if cat == max(categories) :
+                        count = int(float(df_values[cat][0].split(",")[loc]))
+                        stacked_data[cat].append(count)
+                    #count = int(float(df_values[cat][0].split(",")[loc]))
+                    #stacked_data[cat].append(count)
+                    
             return locations, stacked_data
             
         # Prepare plot data for both contigs from records table
         unique_locations1, stacked_counts1 = prepare_plot_data(data1_records)
-        #print("data1 done")
+        #print("unique_locations1, stacked_counts1", unique_locations1, stacked_counts1)
         unique_locations2, stacked_counts2 = prepare_plot_data(data2_records)
-        #print("stacked_data : ",stacked_counts1, stacked_counts2)
+        #print("unique_locations2, stacked_counts2", unique_locations2, stacked_counts2)
         
         # Create a stacked bar plot for contig_name1 from records
         bottom1 = np.zeros(len(unique_locations1))
@@ -161,6 +165,7 @@ def on_contig_select(event):
         #l = len(data2_kmer[['contig','values']].head(1)['values'][0].split(","))
         locations2 = [ i for i in range(l)]
         counts2 = [int(float(i)) for i in l1]
+        #print("locations and counts 2 : ", locations2, counts2)
         #for i in locations2 :
         #    print(i, locations2[i], counts2[i])
             
@@ -266,7 +271,7 @@ def next_selection():
         
 # Function to handle the left button click
 def on_left_click():
-    print(left_button["text"]+" "+coordinates)
+    print(left_button["text"]+" "+coordinates+": samtools faidx " )
     next_selection()
     
 # Function to handle the right button click
