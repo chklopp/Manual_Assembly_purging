@@ -107,7 +107,7 @@ def count_per_slice(loc, sequences, config, slices):
             for i in range(0, int(len(seq)/slice_size)+1):
                 line = line+str(numpy_table[i,a])+","
             line = line[:-1]
-            print(line)
+            #print(line)
             slices.append(line)
         #print(slice)
 
