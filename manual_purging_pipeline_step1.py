@@ -641,9 +641,10 @@ def main():
         generate_kmc_bases_per_assembly(config)
     
     # produce kmc interval databases
+    prefix = config.get('prefix')
     if int(config.get('starting_step')) <= 3 :
         locate, last_dump_file = dump_kmc_bases_per_interval(config)  
-        f = open('file1.pic', 'wb')  
+        f = open(f'{prefix}.file1.pic', 'wb')  
         pickle.dump([locate, last_dump_file], f)
         f.close()
     
@@ -652,15 +653,15 @@ def main():
         try:
             locate
         except NameError:
-            f = open('file1.pic', 'rb')
+            f = open(f'{prefix}.file1.pic', 'rb')
             [locate, last_dump_file] = pickle.load(f)
-            print("retrieved from pickle file1 : ",locate)
+            print(f"retrieved from pickle {prefix}.file1.pic : ",locate)
             f.close()
         slice_count = []
         for i, loc in enumerate(locate) :
             counts = parse_count(loc)
             slice_count = count_per_slice(loc, counts,config, slice_count)
-        f = open('file2.pic', 'wb')  
+        f = open(f'{prefix}.file2.pic', 'wb')  
         pickle.dump([counts, slice_count], f)
         f.close()
     #print(slice_count)
@@ -670,9 +671,9 @@ def main():
         try:
             last_dump_file
         except NameError:
-            f = open('file1.pic', 'rb')
+            f = open(f'{prefix}.file1.pic', 'rb')
             [locate, last_dump_file] = pickle.load(f)
-            print("retrieved from pickle file1 : ",locate)
+            print(f"retrieved from pickle {prefix}.file1.pic : ",locate)
             f.close()
         locate_common_kmers_in_contig_pairs(config, last_dump_file)
     
@@ -685,7 +686,7 @@ def main():
         try:
             slice_count
         except NameError:
-            f = open('file2.pic', 'rb')
+            f = open(f'{prefix}.file2.pic', 'rb')
             [counts, slice_count] = pickle.load(f)
             #print("retrieved from pickle file2 : ",slice_count)
             f.close()    
