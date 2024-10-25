@@ -495,9 +495,9 @@ def generate_count_files_for_graphs(config, count_lines):
         contig_pairs = []
         fi = open(f"{prefix}.{assembly}.localisation.clean.sort.links.list","r")
         fi2 = open(f"{prefix}.{assembly}.localisation.clean.sort.links","r")
-        fo = open(f"{prefix}.{assembly}.localisation.clean.sort.links.list.records","w")
-        fo2 = open(f"{prefix}.{assembly}.localisation.clean.sort.links.list.kmer","w")
-        fo3 = open(f"{prefix}.{assembly}.localisation.clean.sort.links.list.pair.selection","w")
+        fo = open(f"{prefix}.{assembly}.records","w")
+        fo2 = open(f"{prefix}.{assembly}.kmer","w")
+        fo3 = open(f"{prefix}.{assembly}.selection","w")
 
         # filter links per count and output pair over the limit 
         for ind, line in enumerate(fi) :
