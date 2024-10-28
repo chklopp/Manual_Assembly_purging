@@ -8,16 +8,16 @@ import argparse
 
 # Load data from CSV files
 def load_data(records_file, kmer_file, selection_file):
-    #tabulated files 
-    records_names =['Assembly', 'contig', 'haplotype', 'values']
+    #tabulated files
+    records_names =['Assembly', 'contig', 'haplotype', 'factor' ,'values']
     records = pd.read_csv(records_file, sep='\t', names=records_names, header=None)
     #print(records)
     
-    kmer_names =['Assembly', 'pair', 'contig', 'values']
+    kmer_names =['Assembly', 'pair', 'contig', 'factor' ,'values']
     kmer = pd.read_csv(kmer_file, sep='\t', names=kmer_names, header=None)  
     #print(kmer)
 
-    #uniq file 
+    #uniq file
     selection_names = ['contig_name1','contig_name2']
     selection = pd.read_csv(selection_file, sep="\t", names=selection_names, header=None)
     #print(selection)
@@ -28,11 +28,11 @@ def load_data(records_file, kmer_file, selection_file):
             print("missing contig "+row['contig_name1']+" in records")
             exit()
         if row['contig_name2'] not in records['contig'].unique() :
-        	print("missing contig "+row['contig_name2']+" in records")
-        	exit()
+            print("missing contig "+row['contig_name2']+" in records")
+            exit()
         if row['contig_name1']+","+row['contig_name2'] not in kmer['pair'].unique() :
-        	print("missing pair "+row['contig_name1']+","+row['contig_name2']+" in kmer")
-        	exit()    
+            print("missing pair "+row['contig_name1']+","+row['contig_name2']+" in kmer")
+            exit()    
     return records, kmer, selection
 
 # Function to fetch joined contig names from the selection DataFrame
@@ -58,12 +58,16 @@ def on_contig_select(event):
         # Split the selected contig into contig_name1 and contig_name2
         contig_name1, contig_name2 = selected_contig.split(',')
 
-        # change remove button text 
+        # change remove button text
         contig1_button.config(text="Remove "+contig_name1)
         contig1_button.config(state="normal")
         contig2_button.config(text="Remove "+contig_name2)
         contig2_button.config(state="normal")
-        
+        tag1_button.config(text="Tag "+contig_name1)
+        tag1_button.config(state="normal")
+        tag2_button.config(text="Tag "+contig_name2)
+        tag2_button.config(state="normal")
+                        
         # Filter records and kmer DataFrames for both contigs
         data1_records = get_records_by_name(records_df, contig_name1)
         data2_records = get_records_by_name(records_df, contig_name2)
@@ -83,11 +87,12 @@ def on_contig_select(event):
             values = {}
             l = 0
             
-            for d in data[['haplotype','values']].iterrows() :
+            for d in data[['haplotype', 'values']].iterrows() :
                 values[d[1][0]] = d[1][1].split()
                 l = len(d[1][1].split(","))
             
             df_values = pd.DataFrame.from_dict(values)
+            factor = data['factor'].unique()[0]
             locations = [ i for i in range(l)]
             categories = sorted(data['haplotype'].unique())           
             #stacked_data = {cat: [] for cat in categories}
@@ -101,21 +106,30 @@ def on_contig_select(event):
                         stacked_data[cat].append(count)
                     #count = int(float(df_values[cat][0].split(",")[loc]))
                     #stacked_data[cat].append(count)
-                    
-            return locations, stacked_data
+
+            # set the correct X coordinate
+            locations = [i * factor for i in locations]
+            return factor, locations, stacked_data
             
         # Prepare plot data for both contigs from records table
-        unique_locations1, stacked_counts1 = prepare_plot_data(data1_records)
+        factor1, unique_locations1, stacked_counts1 = prepare_plot_data(data1_records)
         #print("unique_locations1, stacked_counts1", unique_locations1, stacked_counts1)
-        unique_locations2, stacked_counts2 = prepare_plot_data(data2_records)
+        factor2, unique_locations2, stacked_counts2 = prepare_plot_data(data2_records)
         #print("unique_locations2, stacked_counts2", unique_locations2, stacked_counts2)
-        
+
+        # only setting the same X axis if the smallest contig is less than 20 times the biggest
+        set_unique_x = True
+        #print("len :", unique_locations1, unique_locations2)
+        ratio_limit = 20 # limit of the ratio length between both presented contigs
+        if (len(unique_locations1)*factor1)/(len(unique_locations2)*factor2) > float(ratio_limit) or (len(unique_locations1)*factor1)/(len(unique_locations2)* factor2) < 1/float(ratio_limit) :
+            set_unique_x = False
+                                        
         # Create a stacked bar plot for contig_name1 from records
         bottom1 = np.zeros(len(unique_locations1))
-        #print("bottom1 ",bottom1)
+        #print("bottom1 ",bottom1, len(bottom1))
         for cat, cat_counts in stacked_counts1.items():
             #print("cat = ",unique_locations1, cat, cat_counts)
-            axs[0, 0].bar(unique_locations1, cat_counts, width=1, bottom=bottom1, label=str(cat))
+            axs[0, 0].bar(unique_locations1, cat_counts, width=factor1, bottom=bottom1, label=str(cat))
             #print("bottom1 ",bottom1)
             bottom1 += np.array(cat_counts)
 
@@ -127,7 +141,7 @@ def on_contig_select(event):
         bottom2 = np.zeros(len(unique_locations2))
         for cat, cat_counts in stacked_counts2.items():
             #print("cat = ",unique_locations2, cat, cat_counts)
-            axs[0, 1].bar(unique_locations2, cat_counts, width=1, bottom=bottom2, label=str(cat))
+            axs[0, 1].bar(unique_locations2, cat_counts, width=factor2, bottom=bottom2, label=str(cat))
             bottom2 += np.array(cat_counts)
 
         axs[0, 1].set_title(f'Total : {contig_name2}', fontsize=12)
@@ -137,7 +151,8 @@ def on_contig_select(event):
         # Plotting for kmer data
         l = 0
         l1 = []
-            
+        
+        factor1 = data1_kmer['factor'].unique()[0]
         #print("data1_kmer", data1_kmer)    
         for d in data1_kmer[['contig','values']].iterrows() :
             l = len(d[1][1].split(","))
@@ -146,11 +161,14 @@ def on_contig_select(event):
         #l = len(data1_kmer[['contig','values']].head(1)['values'][:1].split(","))
         locations1 = [ i for i in range(l)]
         counts1 = [int(float(i)) for i in l1]
+        locations1 = [i * factor1 for i in locations1]
+
+            
         #print("locations and counts 1 : ", locations1, counts1)
         #for i in locations1 :
         #    print(i, locations1[i], counts1[i])
             
-        axs[1, 0].bar(locations1, counts1, width=1)
+        axs[1, 0].bar(locations1, counts1, width=factor1)
         axs[1, 0].set_title(f'Kmer: {contig_name1}', fontsize=12)
         axs[1, 0].set_xlabel('Location', fontsize=10)
         axs[1, 0].set_ylabel('Count', fontsize=10)
@@ -161,25 +179,33 @@ def on_contig_select(event):
         for d in data2_kmer[['contig','values']].iterrows() :
             l = len(d[1][1].split(","))
             l1 = d[1][1].split(",")
-            
+
+        factor2 = data2_kmer['factor'].unique()[0]            
         #l = len(data2_kmer[['contig','values']].head(1)['values'][0].split(","))
         locations2 = [ i for i in range(l)]
         counts2 = [int(float(i)) for i in l1]
+        locations2 = [i * factor2 for i in locations2]
+        
+        if factor2 != 1 :
+            locations2 = locations2[::factor1]
+            counts2 = counts2[::factor1]
+
         #print("locations and counts 2 : ", locations2, counts2)
         #for i in locations2 :
         #    print(i, locations2[i], counts2[i])
             
-        axs[1, 1].bar(locations2, counts2, width=1)
+        axs[1, 1].bar(locations2, counts2, width=factor2)
         axs[1, 1].set_title(f'Kmer: {contig_name2}', fontsize=12)
         axs[1, 1].set_xlabel('Location', fontsize=10)
         axs[1, 1].set_ylabel('Count', fontsize=10)
 
-        # Synchronize the x-axis limits for both graphs
-        all_locations = np.concatenate([unique_locations1, unique_locations2, locations1, locations2])
-        #all_locations = np.concatenate([unique_locations1, unique_locations2])
-        max_x = max(all_locations) if len(all_locations) > 0 else 1
-        for ax in axs.flatten():
-            ax.set_xlim(0, max_x)
+        if set_unique_x == True :
+            # Synchronize the x-axis limits for both graphs
+            all_locations = np.concatenate([unique_locations1, unique_locations2, locations1, locations2])
+            #all_locations = np.concatenate([unique_locations1, unique_locations2])
+            max_x = max(all_locations) if len(all_locations) > 0 else 1
+            for ax in axs.flatten():
+                ax.set_xlim(0, max_x)
 
         # Redraw the canvas with the updated plots
         #axs[1, 1].legend()
@@ -192,7 +218,7 @@ def on_contig_select(event):
 # Function to add or remove a red vertical line at the clicked position
 def on_click(event):
     global vertical_line  # Use a global variable to track the vertical line
-    global coordinates 
+    global coordinates
     x_coord = event.xdata
     y_coord = event.ydata
     x = event.x
@@ -202,7 +228,7 @@ def on_click(event):
     x_lim = inaxes.get_xlim()
     y_lim = inaxes.get_ylim()
 
-    # locate event in canvas 
+    # locate event in canvas
     canvas_x, canvas_y = event.x, event.y
     canvas_width, canvas_height = canvas.get_tk_widget().winfo_width(), canvas.get_tk_widget().winfo_height()
     # Divide the canvas into quadrants
@@ -281,12 +307,25 @@ def on_right_click():
 
 # Function to handle the left button click
 def on_button1_click():
-    print(contig2_button["text"])
+    print(contig1_button["text"])
     next_selection()
         
 # Function to handle the left button click
 def on_button2_click():
-    print(contig1_button["text"])
+    print(contig2_button["text"])
+    next_selection()
+
+# Function to handle the left button click
+def on_tag1_button_click():
+    print(tag1_button["text"])
+    next_selection()
+
+# Function to handle the left button click
+def on_tag2_button_click():
+    print(tag2_button["text"])
+    next_selection()
+        
+def on_next_button_click() :
     next_selection()
         
 # Main Application
@@ -345,11 +384,25 @@ if __name__ == "__main__":
     #contig2_button = tk.Button(root, text="Remove "+contig_names[1], command=lambda contig=contig: on_button2_click(contig_names[1]))
     contig2_button = tk.Button(root, text="Remove ", command=on_button2_click, state=tk.DISABLED)
     contig2_button.pack(side=tk.LEFT)
-        
+
+    # next button / nothing to do on this contig pair
+    tag1_button = tk.Button(root, text="Tag", command=on_tag1_button_click, state=tk.DISABLED)
+    tag1_button.pack(side=tk.LEFT)
+
+    # next button / nothing to do on this contig pair
+    tag2_button = tk.Button(root, text="Tag", command=on_tag2_button_click, state=tk.DISABLED)
+    tag2_button.pack(side=tk.LEFT)
+       
+    # next button / nothing to do on this contig pair
+    next_button = tk.Button(root, text="Next", command=on_next_button_click)
+    next_button.pack(side=tk.LEFT)
+           
     # Bind selection and click events
     listbox.bind("<<ListboxSelect>>", on_contig_select)
     canvas.mpl_connect("button_press_event", on_click)
 
     # Start the Tkinter main loop
     root.mainloop()
+
+
 
