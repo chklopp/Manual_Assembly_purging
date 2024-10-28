@@ -488,6 +488,7 @@ def generate_count_files_for_graphs(config, count_lines):
     slice_size = config.get('slice_size')
     minimum_link_count = config.get('minimum_link_count')
     contig_chunks = {}
+    limit = 18 
     
     # read pair file 
     for i, assembly in enumerate(assemblies):
@@ -518,7 +519,6 @@ def generate_count_files_for_graphs(config, count_lines):
              contigs.append(line.split("\t")[1].split(",")[1])
              contig_pairs.append([line.split("\t")[1].split(",")[0],line.split("\t")[1].split(",")[1]])
         #print("contigs for which to get general stats", set(contigs))
-        #print("contig pair for wich to get local stats", contig_pairs)
         
         # This part should read in locate an print in records to present the number of count of each coverage 
         for i, line in enumerate(count_lines) :
@@ -528,8 +528,30 @@ def generate_count_files_for_graphs(config, count_lines):
                     # add contig chunks to dictionary
                     if not line.split("\t")[1] in contig_chunks : 
                         contig_chunks[line.split("\t")[1]] = len(line.split("\t")[3].split(","))
-                    # write stat line
-                    fo.write(line+"\n")
+                    # process line to generate factor and mean values 
+                    table1 = line.split("\t")[3].split(",")
+                    #print("table : ", table1)
+                    table = []
+                    for t in table1 :
+                    	table.append(int(float(t)))
+                    factor = 1
+                    #print("table ", table, len(table))
+                    if len(table) > limit :
+                        factor = int(len(table)/limit)
+          
+                    # reduce numpy table by mean if the table is too large = length > limit 
+                    if factor !=  1 :
+                        #print("table : ", table)
+                        split_list = [table[i * factor:(i + 1) * factor] for i in range((len(table) + factor - 1) // factor)]
+                        #print("split list : ", split_list)
+                        split_array = np.array(split_list[:-1])
+                        table = np.mean(split_array, axis=1)
+                    
+                    line = line.split("\t")[0]+"\t"+line.split("\t")[1]+"\t"+line.split("\t")[2]+"\t"+str(factor)+"\t"
+                    for i in range(len(table)):
+                        line = line+str(table[i])+","
+                                      
+                    fo.write(line[:-1]+"\n")
         
         #print("contig chunks", contig_chunks)
         counts = {}          
@@ -564,7 +586,6 @@ def generate_count_files_for_graphs(config, count_lines):
         # print(grouped_data)
         # Step 2: Sort by position and prepare the final array
         result = []
-
         for group, names in grouped_data.items():
             for name, positions in names.items():
                 # Sort the counts by position
@@ -577,22 +598,33 @@ def generate_count_files_for_graphs(config, count_lines):
         #print(contig_chunks)
         #print(result[1], result[1][1])
         for i in result :
-            #print(i)
+            print(i)
             #print(contig_chunks[i[1]])
-            numpy_table = np.zeros(contig_chunks[i[1]])
-            #print(numpy_table)
-            for k, j in enumerate(i[2]) :
-                numpy_table[j] = i[3][k]
+            table = i[3]
+            # set graphic reduction factor 
+            factor = 1
+            #print("table ", table, len(table))
+            if len(table) > limit :
+                factor = int(len(table)/limit)
+                print("factor : ", len(table), factor)
+          
+            # reduce numpy table by mean if the table is too large = length > limit 
+            if factor !=  1 :
+                #print("table : ", table)
+                split_list = [table[i * factor:(i + 1) * factor] for i in range((len(table) + factor - 1) // factor)]
+                #print("split list : ", split_list)
+                split_array = np.array(split_list[:-1])
+                table = np.mean(split_array, axis=1)
             
             #print(i[0], i[1])
             contig=i[0].split(",")
             if contig[0] > contig[1] :
-                line = assembly+"\t"+"\t"+contig[1]+","+contig[0]+"\t"+i[1]+"\t"
+                line = assembly+"\t"+"\t"+contig[1]+","+contig[0]+"\t"+i[1]+"\t"+str(factor)+"\t"
             else :
-                line = assembly+"\t"+"\t"+contig[0]+","+contig[1]+"\t"+i[1]+"\t"
+                line = assembly+"\t"+"\t"+contig[0]+","+contig[1]+"\t"+i[1]+"\t"+str(factor)+"\t"
 
-            for i in range(contig_chunks[i[1]]):
-                line = line+str(numpy_table[i])+","
+            for i in range(len(table)):
+                line = line+str(table[i])+","
 
             line = line[:-1]
             fo2.write(line+"\n")
